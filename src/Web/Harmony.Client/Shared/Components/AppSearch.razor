@@ -1,0 +1,42 @@
+﻿@using Harmony.Application.DTO.Search
+@using Harmony.Client.Infrastructure.Helper
+@inject Microsoft.Extensions.Localization.IStringLocalizer<AppSearch> _localizer
+
+<MudStack Class="SearchStack">
+    <MudAutocomplete @ref="_autoComplete" T="SearchableCard" @bind-Value="_selectedCard" Margin="Margin.Dense"
+                     Clearable="true" Placeholder="Search" Class="app-search-bar"
+                     DebounceInterval="700"
+                     Style="width:250px"
+                     AdornmentColor="Color.Tertiary"
+                     AdornmentIcon="@Icons.Material.Filled.SavedSearch"
+                     OnAdornmentClick="AdvancedSearch"
+                     ShowProgressIndicator="true" ProgressIndicatorColor="Color.Default"
+                     SearchFuncWithCancel="@Search" Variant="Variant.Outlined">
+        <ItemTemplate Context="card">
+            <MudPaper Class="pa-4" @onclick="@(() => Navigate(card))">
+                <MudStack Row="true">
+                    <MudTooltip Text="@card.IssueType" Delay="2000">
+                        <MudIcon Size="Size.Large" Icon="@ColorHelper.GetIssueTypeIcon(card.IssueType)"
+                                 Color="ColorHelper.GetIssueTypeColor(card.IssueType)" />
+                    </MudTooltip>
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Style="width:100%">
+                        <MudStack Justify="Justify.Center" Spacing="0">
+                            <MudText Typo="Typo.body1">@card.Title</MudText>
+                                @if (!string.IsNullOrEmpty(card.BoardTitle) && !string.IsNullOrEmpty(card.List))
+                            {
+                                <MudText Typo="Typo.body2">@card.BoardTitle: @card.List</MudText>
+                            }
+                        </MudStack>
+                        @if (!string.IsNullOrEmpty(card.SerialKey))
+                        {
+                            <MudChip Label="true" Size="Size.Small" Color="@(card.IsComplete ? Color.Tertiary : Color.Warning)">
+                                @card.SerialKey
+                            </MudChip>
+                        }
+                    </MudStack>
+
+                </MudStack>
+            </MudPaper>
+        </ItemTemplate>
+    </MudAutocomplete>
+</MudStack>

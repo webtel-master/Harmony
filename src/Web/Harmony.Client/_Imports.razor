@@ -1,0 +1,73 @@
+﻿@*Libraries*@
+@using System.Net.Http
+@using System.Net.Http.Json
+
+
+@using AutoMapper;
+@using Harmony.Client.Infrastructure.Configuration
+@using Harmony.Client.Infrastructure.Managers.Content;
+@using Harmony.Client.Infrastructure.Managers.SignalR;
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.AspNetCore.Components.WebAssembly.Http
+@using Microsoft.JSInterop
+@using MudBlazor
+@using Blazored.LocalStorage;
+
+@using Blazored.TextEditor
+
+@using Harmony.Client
+@using Harmony.Client.Pages.Authentication
+@using Harmony.Client.Shared.Components
+@using Harmony.Client.Shared.Dialogs
+
+@using Harmony.Client.Shared
+@using Harmony.Client.Shared.Components.Automation
+
+@using Harmony.Client.Infrastructure.Authentication;
+@using Harmony.Client.Infrastructure.Managers.Project;
+@using Harmony.Client.Infrastructure.Managers.Identity.Authentication;
+@using Harmony.Client.Infrastructure.Managers.Identity.Account;
+@using Harmony.Client.Infrastructure.Managers.Preferences;
+using Harmony.Client.Infrastructure.Managers.Identity.Roles;
+@using Harmony.Client.Infrastructure.Interceptors;
+@using Harmony.Client.Infrastructure.Managers.Identity.Users;
+@using Harmony.Client.Infrastructure.Settings;
+
+@attribute [Authorize]
+@inject ISnackbar _snackBar
+@inject NavigationManager _navigationManager
+@inject HarmonyStateProvider _stateProvider
+@inject IAuthorizationService _authorizationService
+@inject IDialogService _dialogService
+@inject HttpClient _httpClient
+@inject IHttpInterceptorManager _interceptor
+@inject ClientPreferenceManager _clientPreferenceManager
+@inject ILocalStorageService _localStorage;
+@inject IJSRuntime _jsRuntime;
+@inject ClientConfiguration _clientConfiguration;
+
+@* Managers *@
+@inject IAuthenticationManager _authenticationManager
+@inject IAccountManager _accountManager
+@inject IUserManager _userManager
+@inject IWorkspaceManager _workspaceManager
+@inject IBoardManager _boardManager
+@inject ICardManager _cardManager
+@inject IBoardListManager _boardListManager
+@inject ICheckListManager _checkListManager
+@inject ICheckListItemManager _checkListItemManager
+@inject ILabelManager _labelManager
+@inject IFileManager _fileManager
+@inject ISprintManager _sprintManager
+@inject IHubSubscriptionManager _hubSubscriptionManager
+@inject IUserNotificationManager _userNotificationManager
+@inject ICommentManager _commentManager
+@inject ISearchManager _searchManager
+@inject IAutomationManager _automationManager
+
+@inject IMapper _mapper

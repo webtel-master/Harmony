@@ -1,0 +1,452 @@
+﻿@using Harmony.Application.DTO
+@using Harmony.Application.Features.Lists.Queries.GetBoardLists
+@using Harmony.Application.Helpers;
+@using Harmony.Client.Infrastructure.Helper
+@using Harmony.Domain.Enums;
+@inject Microsoft.Extensions.Localization.IStringLocalizer<CreateBoardModal> _localizer
+
+<style>
+    p img {
+        max-width: 100%;
+    }
+
+    .mud-table-head .header-centered th {
+        text-align: center;
+        font-size: 1.2em;
+    }
+
+    .mud-table-foot .bold-text .mud-table-cell {
+        font-weight: 500;
+    }
+
+</style>
+
+@if (_loading)
+{
+    <ModalLoader />
+}
+else
+{
+    <MudDialog Class="editCardModal">
+        <TitleContent>
+            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                <MudStack Style="width:100%">
+                    <EditableTextField For="@(() => _card.Title)"
+                                       Style="max-width:50%"
+                                       AdornmentIcon="@Icons.Material.Filled.Edit"
+                                       OnSave="(newTitle) => SaveTitle(newTitle)"
+                                       Text="@_card.Title" Label="@_localizer["Title"]" />
+                    <MudStack Row="true" Class="align-end">
+                        <MudChip Label="true" Color="Color.Warning">@BoardKey - @_card.SerialNumber</MudChip>
+                            @if (_card.Sprint != null)
+                        {
+                            <MudChip Label="true" Color="Color.Info">@_card.Sprint.Name</MudChip>
+                        }
+                        @if (_card.IssueType != null && !_card.IsChild)
+                        {
+                            <div style="width:135px;">
+                                <MudSelect @bind-Value:get="_card.IssueType.Summary"
+                                           @bind-Value:set="SaveIssueType"
+                                           For="@(() => _card.IssueType.Summary)"
+                                           Label="Type" AnchorOrigin="Origin.BottomCenter">
+                                    @foreach (var type in _card.IssueTypes)
+                                    {
+                                        <MudSelectItem Value="type.Summary">
+                                            <MudStack Row="true">
+                                                <MudIcon Icon="@ColorHelper.GetIssueTypeIcon(type.Summary)"
+                                                         Color="ColorHelper.GetIssueTypeColor(type.Summary)" />
+                                                <MudText>@type.Summary</MudText>
+                                            </MudStack>
+                                        </MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </div>
+                        }
+                        @if (_card.BoardList != null)
+                        {
+                            <div style="min-width:150px">
+                                <MudSelect @bind-Value:get="_cardBoardList"
+                                           @bind-Value:set="UpdateCardBoardList"
+                                           FullWidth="false"
+                                           ToStringFunc="@boardListConverter"
+                                           T="GetBoardListResponse" Label="Status" AnchorOrigin="Origin.BottomCenter">
+                                    @foreach (var list in _card.BoardLists)
+                                    {
+                                        <MudSelectItem Value="list">@list.Title</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </div>
+                        }
+                        @if (_card.BoardType == BoardType.Scrum)
+                        {
+                            <MudNumericField Style="width:110px" T="short?" HideSpinButtons="true"
+                                             AdornmentIcon="@Icons.Material.Filled.Iso"
+                                             Adornment="Adornment.Start"
+                                             Clearable="true" Disabled="_updatingStoryPoints"
+                                             Label="Story Points"
+                                             FullWidth="false"
+                                             DebounceInterval="1000" OnDebounceIntervalElapsed="UpdateStoryPoints"
+                                             @bind-Value:get="@_card.StoryPoints" Min="0" />
+                        }
+                        @if (_card.StartDate != null || _card.DueDate != null)
+                        {
+                            <MudChip Icon="@Icons.Material.Outlined.DateRange" Label="true">@CardHelper.DisplayDates(_card.StartDate, _card.DueDate)</MudChip>
+                        }
+                        @if (_card.Members.Any())
+                        {
+                            <MudAvatarGroup Max="6" Spacing="3" MaxColor="Color.Primary">
+                                @foreach (var member in _card.Members)
+                                {
+                                    <MudTooltip Text="@member.FullName">
+                                        <MudAvatar Size="Size.Medium" Color="Color.Info">
+                                            @if (string.IsNullOrEmpty(member.ProfilePicture))
+                                            {
+                                                @member.FirstName[0]
+
+                                                @member.LastName[0]
+                                            }
+                                            else
+                                            {
+                                                <MudImage Src="@(_clientConfiguration.GetServerResource(member.ProfilePicture))" title="@member.FullName" />
+                                            }
+                                        </MudAvatar>
+                                    </MudTooltip>
+                                }
+                            </MudAvatarGroup>
+                        }
+                        @if (_card.Labels.Any())
+                        {
+                            <MudPaper Class="d-flex flex-wrap" Elevation="0" Style="height: 32px;">
+                                @foreach (var label in _card.Labels)
+                                {
+                                    <MudTooltip Text="@label.Title">
+                                        <MudPaper Style="@($"color:{Colors.LightGreen.Accent3}; background-color:{label.Colour};")"
+                                                  Height="100%" Width="50px" Elevation="5" Class=" mr-2 mb-2 rounded-lg"></MudPaper>
+                                    </MudTooltip>
+                                }
+                            </MudPaper>
+                        }
+                    </MudStack>
+
+                </MudStack>
+                <MudToggleIconButton Style="height: 40px; margin-right: 30px; margin-top: -3px;" ToggledChanged="ToggleFullScreen" Icon="@Icons.Material.Filled.Fullscreen"
+                                     Color="@Color.Primary" ToggledIcon="@Icons.Material.Filled.FullscreenExit"
+                                     ToggledColor="@Color.Secondary" />
+            </MudStack>
+        </TitleContent>
+        <DialogContent>
+            <MudGrid>
+                <MudItem sm="9">
+                    <MudGrid>
+                        <MudItem xs="12">
+                            <EditableTextEditorField Text="@_card.Description"
+                                                     OnSave="(html) => SaveDescription(html)" />
+                        </MudItem>
+                        <MudItem xs="12" Class="overflow-auto" Style="max-height:315px">
+                            @if (_card.Attachments.Any())
+                            {
+                                <MudStack>
+                                    <div class="spotlight-group">
+                                        @foreach (var attachment in _card.Attachments)
+                                        {
+                                            <MudStack Row="true" Spacing="4" Class="pb-4">
+                                                @if (attachment.Type == AttachmentType.CardImage)
+                                                {
+                                                    <MudElement HtmlTag="a" href="@(_clientConfiguration.GetServerResource(attachment.Url))" Class="spotlight">
+                                                        <MudElement Class="mud-avatar mud-avatar-large mud-avatar-square mud-avatar-filled mud-avatar-filled-default mud-elevation-0"
+                                                                    HtmlTag="img" src="@(_clientConfiguration.GetServerResource(attachment.Url))"></MudElement>
+                                                    </MudElement>
+                                                }
+                                                else
+                                                {
+                                                    <MudElement HtmlTag="a" href="@(_clientConfiguration.GetServerResource(attachment.Url))" target="_blank">
+                                                        <MudIcon Icon="@Icons.Material.Filled.FileOpen" Style="font-size: 3rem;" />
+                                                    </MudElement>
+                                                }
+                                                <MudStack Justify="Justify.Center" Spacing="0">
+                                                    <MudText Typo="Typo.body1">@attachment.OriginalFileName</MudText>
+                                                        <MudText Typo="Typo.body2">Added @attachment.DateCreated.ToString("MM/dd/yyyy h:mm tt")</MudText>
+                                                    </MudStack>
+                                                    <MudStack Justify="Justify.Center">
+                                                        <MudIconButton Color="Color.Error" OnClick="() => RemoveAttachment(attachment.Id)" Icon="@Icons.Material.Filled.Delete" aria-label="delete"></MudIconButton>
+                                                    </MudStack>
+                                                </MudStack>
+                                        }
+                                    </div>
+                                </MudStack>
+                            }
+                        </MudItem>
+                        @if (_card.Children.Any())
+                        {
+                            <MudItem xs="12">
+                                <MudPaper>
+                                    <MudTable Context="child" Items="@_card.Children" Hover="true">
+                                        <HeaderContent>
+                                            <MudTh>Serial Key</MudTh>
+                                            <MudTh>Title</MudTh>
+                                            <MudTh>Status</MudTh>
+                                        </HeaderContent>
+                                        <RowTemplate>
+                                            <MudTd DataLabel="Serial Key">
+                                                <MudTooltip Text="Click for full editing" Delay="2500">
+                                                    <MudChip OnClick="() => EditCard(child)" Label="true" Size="Size.Small" Color="Color.Warning">@BoardKey - @child.SerialNumber</MudChip>
+                                                    </MudTooltip>
+                                                </MudTd>
+                                                <MudTd DataLabel="Title">@child.Title</MudTd>
+                                                <MudTd DataLabel="Status">
+                                                    <MudSelect @bind-Value:get="child.BoardListId"
+                                                               @bind-Value:set="@((listId) => UpdateChildBoardList(child, listId))"
+                                                               FullWidth="false"
+                                                               ToStringFunc="@((childList) => childBoardListConverter(childList, _card.BoardLists))"
+                                                               T="Guid" AnchorOrigin="Origin.BottomCenter">
+                                                        @foreach (var list in _card.BoardLists)
+                                                    {
+                                                        <MudSelectItem Value="list.Id">@list.Title</MudSelectItem>
+                                                    }
+                                                </MudSelect>
+                                            </MudTd>
+                                        </RowTemplate>
+                                    </MudTable>
+                                </MudPaper>
+                            </MudItem>
+                        }
+                        <MudItem xs="12">
+                            @foreach (var checkList in _card.CheckLists)
+                            {
+                                <MudCard>
+                                    <MudCardHeader>
+                                        <CardHeaderContent>
+                                            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                                <EditableTextField Style="width:100%" For="@(() => checkList.Title)"
+                                                                   AdornmentIcon="@Icons.Material.Filled.Checklist"
+                                                                   OnSave="(text) => SaveCheckListTitle(checkList.Id, text)"
+                                                                   Text="@checkList.Title" Label="@_localizer["Title"]" />
+                                                <MudIconButton Icon="@Icons.Material.Filled.Delete" aria-label="delete" Color="Color.Error"
+                                                               OnClick="() => DeleteCheckList(checkList.Id)" Size="Size.Small" Class="align-end" Style="padding-bottom:8px;"></MudIconButton>
+                                            </MudStack>
+                                            <MudProgressLinear Size="Size.Large" Color="checkList.ProgressColor" Value="checkList.TotalProgress" />
+
+                                        </CardHeaderContent>
+                                    </MudCardHeader>
+                                    <MudCardContent Class="pb-0">
+                                        @foreach (var item in checkList.Items)
+                                        {
+                                            <div class="d-flex flex-grow-1 gap-4 mb-4">
+                                                <MudPaper Class="flex-none d-flex" Elevation="0">
+                                                    <MudCheckBox Class="flex-none d-flex" @bind-Checked="@item.IsChecked" @onclick="() => ToggleListItemChecked(item)" Color="Color.Success" />
+                                                </MudPaper>
+                                                <MudPaper Class="flex-auto d-flex" Width="60%" Elevation="0" Style="margin-top:-18px">
+                                                    <EditableTextField For="@(() => item.Description)"
+                                                                       OnSave="(text) => SaveCheckListItemDescription(item.Id, text)"
+                                                                       Text="@item.Description" Label="@_localizer["Description"]" />
+                                                </MudPaper>
+                                                <MudPaper Class="flex-initial d-flex" Width="135px" Elevation="0" Style="margin-top:-18px">
+                                                    <MudDatePicker Label="Due date" @ref="@item.DatePicker"
+                                                                   @bind-Date="@item.DueDate"
+                                                                   DateFormat="yyyy-MM-dd"
+                                                                   IsDateDisabledFunc="@((DateTime dt)=>(dt < DateTime.Now))">
+                                                        <PickerActions>
+                                                            <MudButton Class="mr-auto align-self-start" OnClick="@(() => item.DatePicker.Clear())">Clear</MudButton>
+                                                            <MudButton OnClick="@(() => item.DatePicker.Close(false))">Cancel</MudButton>
+                                                            <MudButton Color="Color.Primary" OnClick="@(() => ListItemDueDateChanged(item))">Ok</MudButton>
+                                                        </PickerActions>
+                                                    </MudDatePicker>
+                                                </MudPaper>
+                                            </div>
+                                        }
+                                    </MudCardContent>
+                                    <MudCardActions Class="d-flex pa-2 justify-end">
+                                        @if (checkList.NewItem != null)
+                                        {
+                                            <EditForm Model="checkList.NewItem" Style="width:100%" OnValidSubmit="() => AddCheckListItem(checkList.NewItem)">
+                                                <div class="d-flex flex-grow-1 gap-4 mb-4">
+                                                    <MudPaper Class="flex-auto d-flex" Width="60%" Elevation="0">
+                                                        <MudTextField For="@(() => checkList.NewItem.Description)" @bind-Value="checkList.NewItem.Description" Label="@_localizer["Description"]" />
+                                                    </MudPaper>
+                                                    <MudPaper Class="flex-initial d-flex" Width="135px" Elevation="0">
+                                                        <MudTextField T="DateTime?" For="@(() => checkList.NewItem.DueDate)" @bind-Value="checkList.NewItem.DueDate" Format="yyyy-MM-dd" Label="Due date" InputType="InputType.Date" />
+                                                    </MudPaper>
+                                                </div>
+                                                <MudPaper Class="d-flex pa-2 justify-end">
+                                                    <MudButton Size="Size.Small" StartIcon="@Icons.Material.Filled.Cancel" OnClick="() => checkList.NewItem = null">@_localizer["Cancel"]</MudButton>
+                                                        <MudButton ButtonType="ButtonType.Submit" Disabled="string.IsNullOrEmpty(checkList.NewItem.Description)" Size="Size.Small" StartIcon="@Icons.Material.Filled.Save">@_localizer["Add"]</MudButton>
+                                                    </MudPaper>
+                                                </EditForm>
+                                        }
+                                        else
+                                        {
+                                            <MudButton Size="Size.Small" StartIcon="@Icons.Material.Filled.AddTask" OnClick="() => checkList.NewItem = new() { CheckListId = checkList.Id }" Color="Color.Primary">@_localizer["Add item"]</MudButton>
+                                        }
+                                    </MudCardActions>
+                                </MudCard>
+                            }
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+                                <MudTabPanel Text="Comments" Icon="@Icons.Material.Filled.Comment">
+                                    <div class="mb-4">
+                                        <EditableTextEditorField @ref="_commentsTextEditor"
+                                                                 SaveIcon="@Icons.Material.Filled.AddComment"
+                                                                 SaveText="Add comment"
+                                                                 Text="" EditorCssStyle="@string.Empty"
+                                                                 OnSave="(html) => AddComment(html)" />
+                                    </div>
+                                    @foreach (var comment in _card.Comments)
+                                    {
+                                        <MudPaper Class="px-2 pt-4 pb-0 mb-2">
+                                            <MudStack Justify="Justify.SpaceBetween" Row="true" Class="pb-4">
+                                                <MudStack Row="true">
+                                                    @if (string.IsNullOrEmpty(comment.User.ProfilePicture))
+                                                    {
+                                                        <MudAvatar Size="Size.Medium" Color="Color.Default">@comment.User.FirstName[0]@comment.User.LastName[0]</MudAvatar>
+                                                    }
+                                                    else
+                                                    {
+                                                        <MudAvatar Size="Size.Medium" Color="Color.Default">
+                                                            <MudImage Src="@(_clientConfiguration.GetServerResource(comment.User.ProfilePicture))" title="@comment.User.FullName" />
+                                                        </MudAvatar>
+                                                    }
+                                                    <MudStack Justify="Justify.Center" Spacing="0">
+                                                        <MudText Typo="Typo.body1">@comment.User.FullName</MudText>
+                                                            <MudText Typo="Typo.body2"><strong>@@@comment.User.UserName</strong></MudText>
+                                                    </MudStack>
+                                                </MudStack>
+                                                <MudStack Row="true" AlignItems="AlignItems.Center">
+                                                    @if (comment.Editable)
+                                                    {
+                                                        <MudIconButton OnClick="@(() => EditComment(comment.Id))" Size="Size.Medium" Icon="@Icons.Material.Filled.Edit"></MudIconButton>
+                                                        <MudIconButton OnClick="@(() => RemoveComment(comment.Id))" Color="Color.Error" Size="Size.Medium" Icon="@Icons.Material.Filled.Delete"></MudIconButton>
+                                                    }
+                                                    <MudText>@String.Format("{0:g}", comment.DateCreated)</MudText>
+                                                    </MudStack>
+
+                                                </MudStack>
+
+                                                <MudText Class="pa-2">
+                                                    @((MarkupString)comment.Text)
+                                                </MudText>
+                                                <MudOverlay Visible="comment.Editing" DarkBackground="true" Absolute="true">
+                                                    <MudProgressCircular Color="Color.Secondary" Indeterminate="true" />
+                                                </MudOverlay>
+                                            </MudPaper>
+                                    }
+                                </MudTabPanel>
+                                <MudTabPanel Text="History" OnClick="LoadCardHistory" Icon="@Icons.Material.Filled.History">
+                                    @foreach (var activity in _card.Activities)
+                                    {
+                                        <MudCard Class="mb-2">
+                                            <MudCardHeader Class="pb-0">
+                                                <CardHeaderAvatar>
+                                                    <MudAvatar Color="Color.Secondary">@(activity.Actor[0])</MudAvatar>
+                                                </CardHeaderAvatar>
+                                                <CardHeaderContent>
+                                                    <MudText Typo="Typo.body1"><b>@activity.Actor</b></MudText>
+                                                    <MudText Typo="Typo.body2">@activity.DateCreated.ToString("ddd, dd MMM yyyy HH:mm")</MudText>
+                                                    </CardHeaderContent>
+                                                </MudCardHeader>
+                                                @if (activity.Type == CardActivityType.ImageAttachmentAdded)
+                                            {
+                                                <MudCardMedia Image="@activity.Url" Height="250" Class="mt-4" />
+                                            }
+                                            <MudCardContent>
+                                                <MudStack Row="true">
+                                                    @switch (activity.Type)
+                                                    {
+                                                        case CardActivityType.CardTitleUpdated:
+                                                            <MudIcon Icon="@Icons.Material.Filled.Title" Color="Color.Default" />
+                                                            break;
+                                                        case CardActivityType.CardDescriptionUpdated:
+                                                            <MudIcon Icon="@Icons.Material.Filled.Description" Color="Color.Default" />
+                                                            break;
+                                                        case CardActivityType.CardDatesUpdated:
+                                                            <MudIcon Icon="@Icons.Material.Filled.DateRange" Color="Color.Default" />
+                                                            break;
+                                                        case CardActivityType.CheckListAdded:
+                                                        case CardActivityType.CheckListItemAdded:
+                                                            <MudIcon Icon="@Icons.Material.Filled.Checklist" Color="Color.Default" />
+                                                            break;
+                                                        case CardActivityType.ImageAttachmentAdded:
+                                                            <MudIcon Icon="@Icons.Material.Filled.AttachFile" Color="Color.Default" />
+                                                            break;
+                                                        case CardActivityType.DocumentAttachmentAdded:
+                                                            <MudIcon Icon="@Icons.Material.Filled.FileOpen" Color="Color.Default" />
+                                                            break;
+                                                        default:
+                                                            <MudIcon Icon="@Icons.Material.Filled.Update" Color="Color.Default" />
+                                                            break;
+                                                    }
+                                                    <MudText Typo="Typo.body2" Style="margin-top:2px">@((MarkupString)activity.Activity)</MudText>
+                                                </MudStack>
+                                            </MudCardContent>
+                                        </MudCard>
+                                    }
+                                </MudTabPanel>
+                            </MudTabs>
+
+                        </MudItem>
+                    </MudGrid>
+                </MudItem>
+                <MudItem sm="3">
+                    <MudButton StartIcon="@Icons.Material.Filled.GroupAdd" Class="mt-2"
+                               Variant="Variant.Outlined" FullWidth="true" OnClick="AddCardMembers"
+                               Color="Color.Primary">MEMBERS</MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.Label" Class="mt-2"
+                               Variant="Variant.Outlined" FullWidth="true"
+                               Color="Color.Primary" OnClick="EditLabels">LABELS</MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.Checklist" OnClick="AddCheckList" Class="mt-2"
+                               Variant="Variant.Outlined" FullWidth="true"
+                               Color="Color.Primary">CHECKLIST</MudButton>
+                    <MudButton StartIcon="@Icons.Material.Filled.EditCalendar" Class="mt-2"
+                               Variant="Variant.Outlined" FullWidth="true"
+                               Color="Color.Primary" OnClick="EditDates">DATES</MudButton>
+                    <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="UploadFiles" MaximumFileCount="20">
+                        <ButtonTemplate>
+                            @if (_card.UploadingAttachment)
+                            {
+                                <MudButton Disabled="true" FullWidth="true">
+                                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                                    <MudText Class="ms-2">Uploading</MudText>
+                                </MudButton>
+                            }
+                            else
+                            {
+                                <MudButton HtmlTag="label"
+                                           Variant="Variant.Outlined"
+                                           Color="Color.Primary"
+                                           FullWidth="true"
+                                           StartIcon="@Icons.Material.Filled.CloudUpload"
+                                           for="@context">
+                                    Upload Files
+                                </MudButton>
+                            }
+                        </ButtonTemplate>
+                    </MudFileUpload>
+                    @if (!_card.IsChild)
+                    {
+                        <MudButton StartIcon="@Icons.Material.Filled.AddTask" OnClick="AddSubTask" Class="mt-2"
+                                   Variant="Variant.Outlined" FullWidth="true"
+                                   Color="Color.Primary">ADD CHILD ISSUE</MudButton>
+                    }
+                    @if (_card.Status != CardStatus.Archived)
+                    {
+                        <MudButton StartIcon="@Icons.Material.Filled.Archive" Class="mt-2"
+                                   Variant="Variant.Outlined" FullWidth="true" OnClick="ArchiveCard"
+                        Color="Color.Error">ARCHIVE CARD</MudButton>
+                        <MudMenu AnchorOrigin="Origin.BottomLeft" FullWidth="true" Class="close-edit-card my-2" Label="Close Edit And" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.KeyboardArrowDown" IconColor="Color.Secondary">
+                            @if (_card.Status == CardStatus.Active)
+                            {
+                                <MudMenuItem OnClick="@(() => ViewBoard(_card.BoardId, _card.BoardTitle))"
+                                             IconSize="Size.Small" IconColor="Color.Primary"
+                                             Icon="@Icons.Material.Filled.Dashboard">View board</MudMenuItem>
+                            }
+                            else if (_card.Status == CardStatus.Backlog)
+                            {
+                                <MudMenuItem OnClick="@(() => ViewBacklog(BoardId))" IconSize="Size.Small" IconColor="Color.Primary" Icon="@Icons.Material.Filled.FormatListBulleted">View backlog</MudMenuItem>
+                            }
+                        </MudMenu>
+                    }
+                    </MudItem>
+            </MudGrid>
+        </DialogContent>
+    </MudDialog>
+}

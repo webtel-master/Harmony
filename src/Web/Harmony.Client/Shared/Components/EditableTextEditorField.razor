@@ -1,0 +1,71 @@
+﻿@using System.Linq.Expressions;
+
+    <MudForm @ref="_form" IsValidChanged="FormValidChanged">
+        <PostTextEditor Contents="@Text" @ref="_textEditor" EditorCssStyle="@EditorCssStyle"></PostTextEditor>
+        <MudPaper Class="d-flex pa-2 flex-row-reverse" Elevation="0">
+            <MudButton Variant="Variant.Filled" OnClick="SaveValue"
+                   StartIcon="@SaveIcon" Size="Size.Small">@SaveText</MudButton>
+        </MudPaper>
+    </MudForm>
+
+
+@code {
+    private MudForm _form;
+    private PostTextEditor _textEditor;
+
+    [Parameter]
+    public string Text { get; set; }
+
+    [Parameter]
+    public string Label { get; set; }
+
+    [Parameter]
+    public object? Validator { get; set; }
+
+    [Parameter]
+    public string SaveIcon { get; set; } = Icons.Material.Filled.Save;
+
+    [Parameter]
+    public string SaveText { get; set; } = "Save";
+
+    [Parameter]
+    public EventCallback<string> OnSave { get; set; }
+
+    [Parameter] public string EditorCssStyle { get; set; } = "min-height:150px;";
+
+    private void FormValidChanged(bool isValid)
+    {
+
+    }
+
+    public async Task SaveValue()
+    {
+        try
+        {
+            var html = await _textEditor.GetHTML();
+            await OnSave.InvokeAsync(html);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+        }
+
+    }
+
+    public async Task Reset()
+    {
+        await _textEditor.LoadHtml(string.Empty);
+    }
+
+    [Parameter]
+    public Expression<Func<string>>? For { get; set; }
+
+    private string _originalText;
+
+    private bool _editing;
+
+    protected override void OnInitialized()
+    {
+        _originalText = Text;
+    }
+}

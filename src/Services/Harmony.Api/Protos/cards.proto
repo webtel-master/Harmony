@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+option csharp_namespace = "Harmony.Api.Protos";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+message CardFilterRequest {
+	string cardId = 1;
+	bool Attachments  = 2;
+    bool BoardList  = 3;
+    bool Board  = 4;
+    bool IssueType = 5;
+    bool Children = 6;
+    bool Members = 7;
+}
+
+message MoveCardToListRequest {
+    string cardId = 1;
+    string boardListId = 2;
+}
+
+message MoveCardToListResponse {
+    bool success = 1;
+    int32 newPosition = 2;
+    string error = 3;
+}
+
+message Card {
+	string cardId = 1;
+    string title = 2;
+    google.protobuf.StringValue boardListId = 3;
+    int32 position = 4;
+    google.protobuf.StringValue boardTitle = 5;
+    bool isCompleted = 6;
+    google.protobuf.Timestamp dueDate = 7;
+    google.protobuf.Timestamp startDate = 8;
+    google.protobuf.Int32Value dueDateReminderType = 9;
+    repeated Card children = 10;
+    repeated string members = 11;
+    google.protobuf.StringValue boardId = 12;
+}
+
+message CardResponse {
+    bool found = 1;
+    Card card = 2;
+}
+
+service CardService {
+  // returns a Card
+  rpc GetCard (CardFilterRequest) returns (CardResponse);
+  rpc MoveCardToList (MoveCardToListRequest) returns (MoveCardToListResponse);
+}

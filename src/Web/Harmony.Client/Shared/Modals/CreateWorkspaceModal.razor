@@ -1,0 +1,35 @@
+﻿@inject Microsoft.Extensions.Localization.IStringLocalizer<CreateWorkspaceModal> _localizer
+
+<EditForm Model="@_createWorkspaceModel" OnValidSubmit="SubmitAsync">
+    <DataAnnotationsValidator />
+    <MudDialog>
+        <TitleContent>
+            @{
+                <MudText Typo="Typo.h6">
+                    <MudIcon Icon="@Icons.Material.Filled.Workspaces" Class="mr-3 mb-n1" />
+                    @_localizer["Create Workspace"]
+                </MudText>
+            }
+        </TitleContent>
+        <DialogContent>
+            <MudTextField For="@(() => _createWorkspaceModel.Name)" @bind-Value="_createWorkspaceModel.Name" Label="@_localizer["Title"]" />
+            <MudTextField For="@(() => _createWorkspaceModel.Description)" @bind-Value="_createWorkspaceModel.Description" Label="@_localizer["Description"]" />
+            <MudSwitch @bind-Checked="@_createWorkspaceModel.IsPublic" Class="mt-4" Label="@_localizer["Public"]" Color="Color.Success" />
+        </DialogContent>
+        <DialogActions>
+            <MudButton Variant="Variant.Filled" OnClick="Cancel">@_localizer["Cancel"]</MudButton>
+            <MudButton Disabled="@(!context.IsModified() || !context.Validate() || _processing)"
+                       ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">
+                @if (_processing)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">@_localizer["Processing"]</MudText>
+                }
+                else
+                {
+                    <MudText>@_localizer["Create"]</MudText>
+                }
+            </MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>

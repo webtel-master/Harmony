@@ -1,0 +1,41 @@
+﻿@inherits LayoutComponentBase
+@* @inject Microsoft.Extensions.Localization.IStringLocalizer<NotFoundLayout> _localizer *@
+
+<MudThemeProvider Theme="HarmonyTheme.DefaultTheme" />
+<MudSnackbarProvider />
+<MudContainer Class="mt-16">
+    <MudText Typo="Typo.h3" Align="Align.Center" GutterBottom="true">Page not found :(</MudText>
+    <MudText Align="Align.Center">Looks like the page you requested doesn't exist</MudText>
+    <MudGrid Class="mt-8 d-flex justify-center">
+        <MudItem xs="12" sm="6">
+            <MudCard Elevation="25" Class="rounded-lg pb-4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h5" Color="Color.Secondary" Align="Align.Center">NOT FOUND</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudList Class="mx-auto mt-4">
+                        <MudListItem Icon="@Icons.Material.Filled.Dashboard">
+                            Are you looking for a workspace? Make sure your administrator has given access to you.
+                        </MudListItem>
+                        <MudListItem Icon="@Icons.Material.Filled.List">
+                            Are you looking for a board? In case it's private you need to gain access first
+                        </MudListItem>
+                    </MudList>
+                </MudCardContent>
+                <MudCardActions Class="d-flex justify-center">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" Style="width:50%;"
+                               OnClick="GoHome">Home</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@{
+    void GoHome()
+    {
+        _navigationManager.NavigateTo("/");
+    }
+}

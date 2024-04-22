@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+option csharp_namespace = "Harmony.Automations.Protos";
+
+import "google/protobuf/any.proto";
+import "google/protobuf/struct.proto";
+
+message GetAutomationTemplatesRequest { }
+
+message AutomationTemplateProto {
+	string id = 1;
+    string name = 2;
+    string summary = 3;
+    int32 type = 4;
+    bool enabled = 5;
+}
+
+message GetAutomationTemplatesResponse {
+	bool success = 1;
+	repeated AutomationTemplateProto templates = 2;
+	repeated string messages = 3;
+}
+
+message CreateAutomationRequest {
+	string automation = 1;
+	int32 Type = 2;
+}
+
+message CreateAutomationResponse {
+	bool success = 1;
+	string automationId = 2;
+	repeated string messages = 3;
+}
+
+message ToggleAutomationRequest {
+	string automationId = 1;
+    bool enabled = 2;
+}
+
+message ToggleAutomationResponse {
+	bool success = 1;
+	repeated string messages = 2;
+}
+
+message RemoveAutomationRequest {
+	string automationId = 1;
+}
+
+message RemoveAutomationResponse {
+	bool success = 1;
+	repeated string messages = 2;
+}
+
+message GetAutomationsRequest {
+	int32 automationType = 1;
+    string boardId = 2;
+}
+
+message GetAutomationsResponse {
+	bool success = 1;
+	int32 type = 2;
+    repeated string automations = 3;
+}
+
+service AutomationService {
+  rpc GetAutomationTemplates (GetAutomationTemplatesRequest) returns (GetAutomationTemplatesResponse);
+  rpc CreateAutomation (CreateAutomationRequest) returns (CreateAutomationResponse);
+  rpc ToggleAutomation (ToggleAutomationRequest) returns (ToggleAutomationResponse);
+  rpc RemoveAutomation (RemoveAutomationRequest) returns (RemoveAutomationResponse);
+  rpc GetAutomations (GetAutomationsRequest) returns (GetAutomationsResponse);
+}

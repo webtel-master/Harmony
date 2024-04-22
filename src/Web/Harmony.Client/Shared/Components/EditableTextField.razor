@@ -1,0 +1,124 @@
+﻿@using System.Linq.Expressions;
+@if (_editing)
+{
+    <MudForm @ref="_form" Style="@Style" IsValidChanged="FormValidChanged" @onkeydown="OnEnter">
+        <MudStack Row="true">
+            <MudTextField Immediate="true" @ref="_textReference" Class="editable-text"
+                          For="For" @bind-Value="Text" DisableUnderLine="true"
+                          Label="@Label" />
+            <MudStack Justify="Justify.FlexEnd" Class="align-end" Style="padding-bottom:4px;gap:0;" Row="true">
+                @if (!_isSaving)
+                {
+                    <MudIconButton Size="Size.Small" OnClick="CancelEditing" Icon="@Icons.Material.Filled.Cancel" aria-label="delete"></MudIconButton>
+                }
+                @if (_isSaving)
+                {
+                    <MudButton Variant="Variant.Text" OnClick="SaveValue" Disabled="!IsSaveEnabled" Size="Size.Small">
+                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    </MudButton>
+                }
+                else
+                {
+                    <MudIconButton Size="Size.Small" OnClick="SaveValue" Disabled="!IsSaveEnabled" Icon="@Icons.Material.Filled.Save" aria-label="save"></MudIconButton>
+                }
+            </MudStack>
+        </MudStack>
+    </MudForm>
+}
+else
+{
+    <MudTextField Style="@Style" DisableUnderLine="true" Adornment="Adornment.End" AdornmentIcon="@AdornmentIcon" ReadOnly="true" @bind-Value="@Text" Class="cursor-pointer" @onclick="Edit" />
+}
+
+@code {
+    private MudForm _form;
+    private bool _isSaving;
+    private MudTextField<string> _textReference;
+
+    [Parameter]
+    public string Text { get; set; }
+
+    [Parameter]
+    public string Style { get; set; }
+
+    [Parameter]
+    public string Label { get; set; }
+
+    [Parameter]
+    public string AdornmentIcon { get; set; }
+
+    [Parameter]
+    public object? Validator { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnSave { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnEdit { get; set; }
+
+    public bool IsSaveEnabled
+    {
+        get
+        {
+            if (_originalText == null)
+            {
+                return _form.IsValid && !_isSaving;
+            }
+
+            return _form.IsValid && !_originalText.Equals(Text.Trim()) && !_isSaving;
+        }
+    }
+
+    private async Task OnEnter(KeyboardEventArgs e)
+    {
+        if (IsSaveEnabled && (e.Code == "Enter" || e.Code == "NumpadEnter"))
+        {
+            await SaveValue();
+            await CancelEditing();
+        }
+    }
+
+    private void FormValidChanged(bool isValid)
+    {
+
+    }
+
+    private async Task Edit()
+    {
+        await OnEdit.InvokeAsync(true);
+        _editing = true;
+        await Task.Delay(50);
+        await _textReference.FocusAsync();
+    }
+
+    private async Task CancelEditing()
+    {
+        await OnEdit.InvokeAsync(false);
+        _editing = false;
+        Text = _originalText;
+    }
+
+    public async Task SaveValue()
+    {
+        _isSaving = true;
+        await OnSave.InvokeAsync(Text);
+
+        _originalText = Text;
+
+        _isSaving = false;
+        _editing = false;
+    }
+
+    [Parameter]
+    public Expression<Func<string>>? For { get; set; }
+
+    private string _originalText;
+
+    private bool _editing;
+
+    protected override void OnInitialized()
+    {
+        _originalText = Text;
+    }
+
+}

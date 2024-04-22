@@ -1,0 +1,133 @@
+﻿@using Harmony.Application.DTO
+@using Harmony.Application.DTO.Search
+@using Harmony.Client.Infrastructure.Helper
+@using Harmony.Domain.Enums;
+@inject Microsoft.Extensions.Localization.IStringLocalizer<AdvancedSearchModal> _localizer
+
+<EditForm Model="@_advancedSearchCommandModel" OnValidSubmit="Search">
+    <DataAnnotationsValidator />
+    <MudDialog>
+        <TitleContent>
+            @{
+                <MudText Typo="Typo.h6">
+                    <MudIcon Icon="@Icons.Material.Filled.AddCard" Class="mr-3 mb-n1" />
+                    @_localizer["Advanced search"]
+                </MudText>
+            }
+        </TitleContent>
+        <DialogContent>
+            <MudGrid Style="">
+                <MudItem xs="12" md="4">
+                    <MudPaper>
+                        <MudList>
+                            <MudListItem>
+                                <MudSelect Disabled="!_userBoards.Any()" T="BoardDto" Clearable="true"
+                                           @bind-Value:get="_selectedBoard"
+                                           @bind-Value:set="SetBoard"
+                                           ToStringFunc="boardConverterFunc"
+                                           Label="Select project (required)" AnchorOrigin="Origin.BottomCenter">
+                                    @foreach (var board in _userBoards)
+                                    {
+                                        <MudSelectItem Value="board">
+                                            <MudText>@board.Title</MudText>
+                                            </MudSelectItem>
+                                    }
+                                </MudSelect>
+                                @if (_selectedBoard != null)
+                                {
+                                    <MudSelect Disabled="!_userBoards.Any()" T="BoardListDto" Clearable="true"
+                                               @bind-Value:get="_selectedBoardList"
+                                               @bind-Value:set="SetBoardList"
+                                               ToStringFunc="boardListConverterFunc"
+                                               Label="List (optional)" AnchorOrigin="Origin.BottomCenter">
+                                        @foreach (var list in _selectedBoard.Lists)
+                                        {
+                                            <MudSelectItem Value="list">
+                                                <MudText>@list.Title</MudText>
+                                                </MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                }
+                            </MudListItem>
+                            <MudListItem>
+                                <MudTextField For="@(() => _advancedSearchCommandModel.Title)" @bind-Value="_advancedSearchCommandModel.Title" Label="Title" Variant="Variant.Text"></MudTextField>
+                            </MudListItem>
+                            <MudListItem>
+                                <MudTextField For="@(() => _advancedSearchCommandModel.Description)" @bind-Value="_advancedSearchCommandModel.Description" Label="Description" Variant="Variant.Text"></MudTextField>
+                            </MudListItem>
+                            <MudListItem>
+                                <MudCheckBox For="@(() => _advancedSearchCommandModel.HasAttachments)"
+                                             @bind-Checked="_advancedSearchCommandModel.HasAttachments" Color="Color.Tertiary"
+                                             Label="Has attachments"></MudCheckBox>
+                            </MudListItem>
+                            <MudListItem>
+                                <MudDatePicker PickerVariant="PickerVariant.Dialog" @ref="_datePicker" Label="Due date"
+                                               For="@(() => _advancedSearchCommandModel.DueDate)"
+                                               @bind-Date="_advancedSearchCommandModel.DueDate" AutoClose="true">
+                                    <PickerActions Context="pickContext">
+                                        <MudButton Class="mr-auto align-self-start" OnClick="@(() => _datePicker.Clear())">Clear</MudButton>
+                                        <MudButton OnClick="@(() => _datePicker.Close(false))">Cancel</MudButton>
+                                        <MudButton Color="Color.Primary" OnClick="@(() => _datePicker.Close())">Ok</MudButton>
+                                    </PickerActions>
+                                </MudDatePicker>
+                            </MudListItem>
+                            <MudListItem>
+                                <MudGrid>
+                                    <MudItem xs="6">
+                                        <MudSwitch @bind-Checked="@_advancedSearchCommandModel.CombineFilters"
+                                                   Label="Combine filters" Color="Color.Success" />
+                                    </MudItem>
+                                    <MudItem xs="6">
+                                        <MudButton FullWidth="true" Disabled="@(!context.Validate() || _searching || _selectedBoard == null)"
+                                                   ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">
+                                            @if (_searching)
+                                            {
+                                                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                                                <MudText Class="ms-2">@_localizer["Searching.."]</MudText>
+                                            }
+                                            else
+                                            {
+                                                <MudText>@_localizer["Search"]</MudText>
+                                            }
+                                        </MudButton>
+                                    </MudItem>
+                                </MudGrid>
+
+                            </MudListItem>
+                        </MudList>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" md="8">
+                    <MudPaper>
+                        <MudTable @ref="_mudTable" Items="@_cards" Hover="true" T="SearchableCard"
+                                  Loading="@_searching" LoadingProgressColor="Color.Info"
+                                  RowClass="cursor-pointer" OnRowClick="RowClickEvent"
+                                  FixedHeader="true" Style="height: calc(100vh - 90px);">
+                            <HeaderContent>
+                                <MudTh>Key</MudTh>
+                                <MudTh>Title</MudTh>
+                                <MudTh>Type</MudTh>
+                            </HeaderContent>
+                            <RowTemplate Context="card">
+                                <MudTd DataLabel="Serial Key">
+                                    <MudChip Label="true" Size="Size.Small" Color="@(card.IsComplete ? Color.Tertiary : Color.Warning)">
+                                        @card.SerialKey
+                                    </MudChip>
+                                </MudTd>
+                                <MudTd DataLabel="Title">@card.Title</MudTd>
+                                    <MudTd DataLabel="Issue Type">
+                                        <MudStack Row="true">
+                                            <MudTooltip Text="@card.IssueType" Delay="2500">
+                                                <MudIcon Icon="@ColorHelper.GetIssueTypeIcon(card.IssueType)"
+                                                         Color="ColorHelper.GetIssueTypeColor(card.IssueType)" />
+                                            </MudTooltip>
+                                        </MudStack>
+                                    </MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        </MudPaper>
+                    </MudItem>
+                </MudGrid>
+            </DialogContent>
+        </MudDialog>
+    </EditForm>

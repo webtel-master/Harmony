@@ -1,0 +1,51 @@
+﻿@using Harmony.Domain.Enums
+@inject Microsoft.Extensions.Localization.IStringLocalizer<CreateWorkspaceBoard> _localizer
+
+<MudMenu EndIcon="@Icons.Filled.KeyboardArrowDown" Label="Create" Color="Color.Inherit" Dense="true" AnchorOrigin="Origin.BottomRight">
+    <MudMenuItem Style="max-width: 350px" @onclick="OpenCreateWorkspaceModal">
+        <MudCard Outlined="false">
+            <MudCardContent>
+                <MudGrid>
+                    <MudItem xs="10">
+                        <MudText>Create Workspace</MudText>
+                    </MudItem>
+                    <MudItem xs="2">
+                        <MudIcon Icon="@Icons.Material.Filled.Workspaces" Title="Workspace" />
+                    </MudItem>
+                </MudGrid>
+                <MudText Typo="Typo.body2">A workspace is a group of boards and people. Use it to organize your company, side hustle, family or friends</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudMenuItem>
+    <MudMenuItem Style="max-width: 350px" @onclick="() => OpenCreateBoardModal(BoardType.Kanban)">
+        <MudCard Outlined="false">
+            <MudCardContent>
+                <MudGrid>
+                    <MudItem xs="10">
+                        <MudText>Create Kanban board</MudText>
+                    </MudItem>
+                    <MudItem xs="2">
+                        <MudIcon Icon="@Icons.Material.Filled.Dashboard" Title="Board" />
+                    </MudItem>
+                </MudGrid>
+                
+                <MudText Typo="Typo.body2">A board is made up of cards ordered on lists. Use it to manage projects, track information, or organize anything.</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudMenuItem>
+    <MudMenuItem Style="max-width: 350px" @onclick="() => OpenCreateBoardModal(BoardType.Scrum)">
+        <MudCard Outlined="false">
+            <MudCardContent>
+                <MudGrid>
+                    <MudItem xs="10">
+                        <MudText>Create Scrum project</MudText>
+                    </MudItem>
+                    <MudItem xs="2">
+                        <MudIcon Icon="@Icons.Material.Filled.Update" Title="Scrum project" />
+                    </MudItem>
+                </MudGrid>
+                <MudText Typo="Typo.body2">With a scrum project you can plan upcoming work in a backlog, organize cycles of work into sprints and monitor your team's velocity</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudMenuItem>
+</MudMenu>
