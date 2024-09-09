@@ -13,11 +13,13 @@ using Serilog;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
+    .WriteTo.File("myLogFile.txt")
     .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseSerilog(SeriLogger.Configure);
+Log.Information("Started Application");
 
 // Add services to the container.
 builder.Services.AddLocalization(options =>
@@ -44,13 +46,17 @@ builder.Services.AddCors(
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+//Log.Information("Adding Database");
 builder.Services.AddDatabase(builder.Configuration);
+//Log.Information("Database Added");
 builder.Services.AddCurrentUserService();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.RegisterSwagger();
 builder.Services.AddInfrastructureMappings();
+//Log.Information("Adding Sql Infra");
 builder.Services.AddSqlServerRepositories();
+//Log.Information("Added Sql Infra");
 builder.Services.AddIdentityServices();
 builder.Services.AddJwtAuthentication(builder.Services.GetApplicationSettings(builder.Configuration));
 

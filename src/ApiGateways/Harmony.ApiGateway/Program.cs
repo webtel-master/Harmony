@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Builder;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
 
@@ -27,6 +26,8 @@ app.UseSwaggerForOcelotUI(option =>
     option.PathToSwaggerGenerator = "/swagger/docs";
 });
 app.MapControllers();
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 app.UseWebSockets();
 

@@ -2,7 +2,8 @@
 
 @if (_workspaceManager.UserWorkspaces.Any())
 {
-    <MudMenu Color="Color.Inherit" Label="@_localizer["Workspaces"]" MaxHeight="350"
+     <MudMenu TextColor="black" Label="@_localizer["Workspaces"]" MaxHeight="350" 
+        
     EndIcon="@Icons.Material.Filled.KeyboardArrowDown" Dense="true" AnchorOrigin="Origin.BottomLeft">
         @foreach (var workspace in _workspaceManager.UserWorkspaces)
         {

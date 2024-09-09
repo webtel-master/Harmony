@@ -18,6 +18,7 @@ namespace Harmony.Domain.Entities
         public List<Label> Labels { get; set; }
         public List<IssueType> IssueTypes { get; set; }
         public BoardType Type { get; set; }
+        public ProjectType ProjectTypes { get; set; }
         public string Key {  get; set; }
         public List<Sprint> Sprints { get; set; }
     }

@@ -1,9 +1,14 @@
 ﻿@inject Microsoft.Extensions.Localization.IStringLocalizer<MainLayout> _localizer 
 
 <MudAppBar Elevation="25">
-    <MudLink Href="/" Color="Color.Inherit">Harmony</MudLink>
+    @* <MudLink Href="/" Color="Color.Inherit">Harmony</MudLink> *@
+    @* <MudLink Href="/" TextColor="black">Webtel</MudLink> *@
+    <MudLink Href="/" TextColor="black">
+        <MudImage Src="/images/webtel.png"  Style="width:100px;" />
+    </MudLink>
+
     <MudToolBar DisableGutters="true">
-        <MudIconButton Icon="@Icons.Material.Outlined.Menu" Color="Color.Inherit" OnClick="@((e) => DrawerToggle())" Class="ml-3" />
+        <MudIconButton Icon="@Icons.Material.Outlined.Menu"  TextColor="black" OnClick="@((e) => DrawerToggle())" Class="ml-3" />
     </MudToolBar>
     <WorkspaceSelector />
     <MudSpacer />
@@ -12,7 +17,7 @@
         <CreateWorkspaceBoard />
         @* <LanguageSelector /> *@
         <MudTooltip Text="Toggle Dark Mode">
-            <MudIconButton Icon="@Icons.Material.Filled.Brightness4" Color="Color.Inherit" OnClick="@((e) => ToggleDarkMode())" />
+            <MudIconButton Icon="@Icons.Material.Filled.Brightness4" TextColor="black" OnClick="@((e) => ToggleDarkMode())" />
         </MudTooltip>
       @*   <MudTooltip Text="Fork Repository">
             <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Link="https://github.com/chsakell/harmony" Target="_blank" />

@@ -5,4 +5,8 @@
         Kanban,
         Scrum
     }
+    public enum ProjectType
+    {
+        Test
+    }
 }
